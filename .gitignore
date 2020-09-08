@@ -10,6 +10,7 @@ __pycache__/
 *.gz
 # Distribution / packaging
 .Python
+__MACOSX/
 build/
 develop-eggs/
 dist/
