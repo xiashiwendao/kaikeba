@@ -5,11 +5,13 @@ __pycache__/
 
 # C extensions
 *.so
-
+.vscode/
+.metals/
 *.zip
 *.gz
 # Distribution / packaging
 .Python
+__MACOSX/
 build/
 develop-eggs/
 dist/
