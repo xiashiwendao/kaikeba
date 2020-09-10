@@ -4,21 +4,32 @@ os.chdir(os.path.dirname(__file__))
 import cv2
 from matplotlib import pyplot as plt
 # 近邻插值法
-def nn_insert(data, target_shape):
+def nn_insert_raw(data, target_shape):
     src_shape = data.shape
-    w = target_shape[0]/src_shape[0]
+    w_h = target_shape[0]/src_shape[0]
+    w_w = target_shape[1]/src_shape[1]
     newdata = np.zeros(target_shape)
-    for i in range(target_shape[1]):
-        for j in range(target_shape[0]):
-            mapping_i = round(i/w)
-            mapping_j = round(j/w)
-            if(len(target_shape)==3):
-                for n in range(target_shape[2]):
-                    newdata[i,j, n] = data[mapping_i, mapping_j, n]
-            else:
-                newdata[i,j] = data[mapping_i, mapping_j]
+    for i in range(target_shape[0]-1):
+        for j in range(target_shape[1]-1):
+            mapping_i = round(i/w_h)
+            mapping_j = round(j/w_w)
+            newdata[i,j] = data[mapping_i, mapping_j]
 
-            print("i: ", i, "j: ", j, "data: ", "mapping_i: ", mapping_i, "mapping_j: ", mapping_j, newdata[i, j, :])
+    return newdata
+
+def nn_insert(data, target_shape):
+    srcH, srcW, _ = data.shape
+    dstH, dstW = target_shape[0], target_shape[1]
+    w_h = dstH/srcH #target_shape[0]/src_shape[0]
+    w_w = dstW/srcW #target_shape[1]/src_shape[1]
+    # 这里注意，像素矩阵必须要指定dtype=np.unit，否则图像不能正常显示
+    # 因为像素必须要是整数
+    newdata = np.zeros((dstH, dstW, 3), dtype=np.uint8)
+    for i in range(target_shape[0]-1):
+        for j in range(target_shape[1]-1):
+            mapping_i = round(i*srcH/dstH) #round(i/w_h)
+            mapping_j = round(j*srcH/dstH) #round(j/w_w)
+            newdata[i,j] = data[mapping_i, mapping_j]
 
     return newdata
 
