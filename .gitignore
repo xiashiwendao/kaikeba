@@ -9,6 +9,7 @@ __pycache__/
 .metals/
 *.zip
 *.gz
+*.ckpt
 # Distribution / packaging
 .Python
 __MACOSX/

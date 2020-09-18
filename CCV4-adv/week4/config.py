@@ -1,12 +1,16 @@
 import tensorflow as tf
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = tf.flags.FLAGS
+
+# tf.app.flags.DEFINE_integer('input_size', 224, "image size")
 
 class Config:
     def __init__(self):
         root = self.Scope('')
-        for k, v in FLAGS.__dict__['__flags'].items():
-            root[k] = v
+        # for k, v in FLAGS.__dict__['__flags'].items():
+        #     root[k] = v
+        for k in FLAGS.__dict__['__wrapped']:
+            root[k] = FLAGS.__dict__['__wrapped'][k]._value
         self.stack = [ root ]
 
     def iteritems(self):
