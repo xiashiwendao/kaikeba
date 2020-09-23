@@ -4,6 +4,8 @@ import torch.optim as optim
 from torchvision import models
 from torchvision.models.vgg import VGG
 
+import os
+os.chdir(r'C:\nuts_sync\code_Space\learn_kaikeba\CCV4-adv\week4\xushaojie')
 # emmmmmm怎么说呢，我感觉换了resnet50之后没啥变化。。。
 # 我自己以前也试过这种换backbone的行为，发现真的换不换的性能都差不多
 
@@ -215,9 +217,11 @@ def make_layers(cfg, batch_norm=False):
     return nn.Sequential(*layers)
 '''
 
-from model.resnet import resnet50
+
 
 if __name__ == "__main__":
+    from resnet import resnet50
+
     batch_size, n_class, h, w = 10, 2, 288, 800
 
     # vgg_model = VGGNet(requires_grad=True)
