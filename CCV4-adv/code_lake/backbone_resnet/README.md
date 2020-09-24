@@ -13,12 +13,3 @@ https://github.com/MachineLP/models/blob/master/research/slim/nets
 里面包含了大量的常见的net的实现，这个github仓库是fork了tensorflow的models：
 https://github.com/tensorflow/models
 现在slim的这些实现不再包含在tensorflow/tensorflow的代码库中,而是新建了一个仓库，所以查看tensorflow的库已经找不到这些nets的实现了；
-
-resnet_fcn参考：
-https://github.com/wkcn/resnet-fcn.tensorflow
-
-focal loss raw参考：
-https://blog.csdn.net/chris_xy/article/details/88728408
-
-focal loss最终版参考：
-https://zhuanlan.zhihu.com/p/77381304
