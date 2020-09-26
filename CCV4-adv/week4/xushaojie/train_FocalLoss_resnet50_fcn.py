@@ -66,11 +66,13 @@ def draw_figure(record_dict, title="Loss", ylabel='loss', filename="loss.png"):
 
 
 def main():
-    # get model
+    # get model，第一步是判断设备cpu还是GPU
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # 获取backbone
     fcn_model = FCNs(pretrained_net=resnet50(pretrained=True))
     # criterion = nn.BCELoss()
     criterion = BCEFocalLoss()
+    # 优化函数
     optimizer = optim.Adam(fcn_model.parameters(), lr=LR, weight_decay=0.0001)
     evaluator = Evaluator(num_class=2)
 

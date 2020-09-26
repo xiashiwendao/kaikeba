@@ -11,6 +11,7 @@ __pycache__/
 *.gz
 *.ckpt
 *pth
+test.py
 dataset/
 weight/
 # Distribution / packaging
