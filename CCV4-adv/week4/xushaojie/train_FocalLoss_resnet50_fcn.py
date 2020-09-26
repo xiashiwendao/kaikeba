@@ -74,6 +74,7 @@ def main():
     criterion = BCEFocalLoss()
     # 优化函数
     optimizer = optim.Adam(fcn_model.parameters(), lr=LR, weight_decay=0.0001)
+    # 评估器
     evaluator = Evaluator(num_class=2)
 
     if device == 'cuda':
@@ -84,6 +85,9 @@ def main():
     train_set = LaneClsDataset(list_path='train.tsv',
                                dir_path='data_road',
                                img_shape=(IMG_W, IMG_H))
+    # DataLoader是pytorch里面内置的处理类，对于数据集以及训练属性进行封装，
+    # 训练属性是指batch_size（一次扔多少个样本进模型进行train），shuffle（数据是否打乱）；
+    # num_worker则是指多少个进程（subprocesses，我觉得线程更加合适一些）
     train_loader = DataLoader(train_set, batch_size=BATCH_SIZE,
                               shuffle=True, num_workers=8)
 
@@ -93,6 +97,8 @@ def main():
     val_loader = DataLoader(val_set, batch_size=1, shuffle=False, num_workers=1)
 
     # info records
+    # 指定了一堆字段，后面用于赋值，
+    # TODO 看完了再来补充
     loss_dict = defaultdict(list)
     px_acc_dict = defaultdict(list)
     mean_px_acc_dict = defaultdict(list)
@@ -101,9 +107,14 @@ def main():
 
     for epoch_idx in range(1, MAX_EPOCH + 1):
         # train stage
+        # 这里设置当前模式为“train”，对应是“evaluation”，这个设置对于某些模块是影响很大的
+        # 比如dropout，batch_normalization
         fcn_model.train()
         evaluator.reset()
         train_loss = 0.0
+        # 注意这里体现了Loader的优势，因为指定了batchsize，所以loader只会返回batch_size大小的数据
+        # 这里观察依稀返回每个item的组成，分别是id，一个二元组，图像和标签（label），现在知道为什么
+        # 吃内存了，如果内存足够大，batch_size设置的足够大，那么每次就可以训练多个；但是小的batch_size
         for batch_idx, (image, label) in enumerate(train_loader):
 
             lr = LR
