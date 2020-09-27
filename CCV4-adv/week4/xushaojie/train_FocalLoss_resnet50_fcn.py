@@ -143,9 +143,15 @@ def main():
                                                                               lr,
                                                                               loss.item()))
             optimizer.step()
+
+        ## 下面的dict的复制都是针对于评估参数的，用于记录评估模型进展（通过dict进行记录中间过程）
+        # 以及出图
         loss_dict['train'].append(train_loss/len(train_loader))
+        # TODO 像素精度（不是很懂原理，后面研究一下），为什么会是多个值呢？基于混淆矩阵的
         px_acc = evaluator.Pixel_Accuracy() * 100
         px_acc_dict['train'].append(px_acc)
+        # TODO 像素精度均值（不是很懂，后面研究一下）
+        # 是将px_acc的值取了均值，这说明上面获得px_acc其实是一个数组（多个值）
         mean_px_acc = evaluator.Pixel_Accuracy_Class() * 100
         mean_px_acc_dict['train'].append(mean_px_acc)
         mean_iou = evaluator.Mean_Intersection_over_Union() * 100
@@ -159,12 +165,19 @@ def main():
             mean_px_acc,
             mean_iou,
             freq_iou))
-
+        # 再开始新的一轮epoch之前重置evaluator，就是将混淆矩阵设置为全0
+        # TODO 为什么混淆矩阵初始化要*2，即为什么是2维的呢？
         evaluator.reset()
         # validate stage
+        # eval是evaluation的简写，其效果和model.train(false)等价，这个属性针对dropout，batchnorm等
+        # 层有效，进入推断模式这些层不需要参与计算，即这些层只是用于在训练阶段提供更大随机性和健壮性，
+        # 在模型生成阶段已提高模型的性能；在预测（推断）阶段不需要他们
         fcn_model.eval()
+        # 每一个epoch都是需要跑一下validation数据，验证本轮epoch的效果怎么样，因为进入到了valiation
+        # 阶段，即预测（推断）阶段，所以上面设置为eval模式
         with torch.no_grad():
             val_loss = 0.0
+            # 注意，这里image是batch_size个image（此次代码设置为1），是一个batch的validation数据集
             for image, label in val_loader:
                 image, label = image.to(device), label.to(device)
                 output = fcn_model(image)
@@ -173,6 +186,7 @@ def main():
                 val_loss += loss.item()
                 evaluator.add_batch(torch.argmax(output, dim=1).cpu().numpy(),
                                     torch.argmax(label, dim=1).cpu().numpy())
+            # 求验证集loss均值
             val_loss /= len(val_loader)
             loss_dict['val'].append(val_loss)
             px_acc = evaluator.Pixel_Accuracy() * 100
@@ -193,6 +207,7 @@ def main():
                                                                   freq_iou))
 
         # save model checkpoints
+        # 每隔SAVE_INTERVAL个epoch，就将checkpoint进行保存；或者达到了epoch的最大次数（即将退出训练）
         if epoch_idx % SAVE_INTERVAL == 0 or epoch_idx == MAX_EPOCH:
             os.makedirs(MODEL_CKPT_DIR, exist_ok=True)
             ckpt_save_path = os.path.join(MODEL_CKPT_DIR, 'epoch_{}.pth'.format(epoch_idx))
