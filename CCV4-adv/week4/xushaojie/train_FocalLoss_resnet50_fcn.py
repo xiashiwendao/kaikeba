@@ -112,27 +112,48 @@ def main():
         fcn_model.train()
         evaluator.reset()
         train_loss = 0.0
+        # batch_size迭代，第二层迭代
         # 注意这里体现了Loader的优势，因为指定了batchsize，所以loader只会返回batch_size大小的数据
         # 这里观察依稀返回每个item的组成，分别是id，一个二元组，图像和标签（label），现在知道为什么
-        # 吃内存了，如果内存足够大，batch_size设置的足够大，那么每次就可以训练多个；但是小的batch_size
+        # 吃内存了，如果内存足够大，batch_size设置的足够大，那么每次就可以训练多个,连带着迭代次数也少；
+        # 但是小的batch_size精确度要好一些；所以看数据的大小
         for batch_idx, (image, label) in enumerate(train_loader):
 
-            lr = LR
+            lr = LR # learning rate，或者说step，这里指定为le-3
             lr = lr_func((epoch_idx-1) * 88 + batch_idx, lr)
             for param in optimizer.param_groups:
                 param['lr']=lr
-
+            # to(device)，代表将tensor数据复制一份，传输到GPU/CPU里面；为下一步训练/推断做准备
+            # to(device)其实和tensorflow里面的定义一个variable是一样的，只不过tensorflow是先
+            # 定义一张图（grapth）；而pytorch则是将既有的变量放置到gpu里面；其实我觉得就是在构建
+            # graph；
             image = image.to(device)
             # print(label.shape)
             # label = label.reshape(BATCH_SIZE, 288, 800)
             label = label.to(device)
+            # 每个batch开始的时候都要将上一次训练的梯度设置为0
+            # optimizer（优化器）是指Adam，SGD这些梯度下降函数的封装，
+            # 顾名思义，是要对模型进行优化，怎么优化，就是通过梯度下降函数来进行优化
+            # 如果两个batch进行一次zero_grad其实即使变相的增大batch_size，参看一下：
+            # https://www.jb51.net/article/189433.htm 觉得说的还是很有道理的
             optimizer.zero_grad()
+            # 这里有一个疑问，为什么图片都是一张一张的train呢？不是一个batch一起训练的吗？
+            # 其实不是，这里的image和label都是数组，因为batch吗，就是一批数据；只不过这里
+            # 变量定义为单数形式，其实使用复数形式更加准确一些；我是看到evaluator.add_batch
+            # 的时候明白的，因为label中取最大，这就是说明label是多个元素
             output = fcn_model(image)
             output = torch.sigmoid(output)
-
+            # 看到此处，我觉得有一个重点，就是损失函数和优化器（梯度下降）是两回事，前者是用来评价参数
+            # （权重）的好坏，后者则是决定权重（参数）应该怎么变，变化多少；损失函数是指交叉熵，MSE等，
+            # 优化器是Adam，SGD等，其实优化器是通过指定学习率变化的策略，来调整参数（权重）变化力度；
+            # 基本的套路是首先loss（损失函数）获取评价值，如果评价值没有达标则由优化器对权重按照规则进行
+            # “优化”，不过本次首先是基于次数的，而不是基于评价指标；所以第二个套路是loss和优化器没有直接
+            # 关系，loss只是用于监控效果，出图，无论loss什么情况，优化器都会进行不断的进行参数调整，直到
+            # 达到了指定的迭代次数
             loss = criterion(output, label.long())
             loss.backward()
-
+            # 将本次的结果添加到混淆矩阵中
+            # TODO 这里的采用混淆矩阵来评价多分类还要再研究一下
             evaluator.add_batch(torch.argmax(output, dim=1).cpu().numpy(),
                                 torch.argmax(label, dim=1).cpu().numpy())
             train_loss += loss.item()
@@ -142,6 +163,7 @@ def main():
                                                                               len(train_loader),
                                                                               lr,
                                                                               loss.item()))
+            # 根据优化器的学习率规则，来更新参数（权重）
             optimizer.step()
 
         ## 下面的dict的复制都是针对于评估参数的，用于记录评估模型进展（通过dict进行记录中间过程）
