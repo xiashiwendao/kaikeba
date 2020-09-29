@@ -32,8 +32,9 @@ MAX_EPOCH = 50
 IMG_H = 288
 IMG_W = 800
 SAVE_INTERVAL = 5
-MODEL_CKPT_DIR = "./ckpt/resnet_fcn/"
-FIGURE_DIR = "./figures/resnet_fcn/"
+MODEL_CKPT_DIR = r"C:\nuts_sync\Code_Space\learn_kaikeba\CCV4-adv\week4\weights"
+FIGURE_DIR = r"C:\nuts_sync\Code_Space\learn_kaikeba\CCV4-adv\week4\figures"
+DATASET_DIR = r"C:\nuts_sync\Code_Space\learn_kaikeba\CCV4-adv\week4\dataset\data_road"
 WARMUP_STEPS = 88
 WARMUP_FACTOR = 1.0 / 3.0
 lr_schedule = [264, 880]
@@ -83,7 +84,7 @@ def main():
 
     # get dataloader
     train_set = LaneClsDataset(list_path='train.tsv',
-                               dir_path='data_road',
+                               dir_path=DATASET_DIR,
                                img_shape=(IMG_W, IMG_H))
     # DataLoader是pytorch里面内置的处理类，对于数据集以及训练属性进行封装，
     # 训练属性是指batch_size（一次扔多少个样本进模型进行train），shuffle（数据是否打乱）；
@@ -92,7 +93,7 @@ def main():
                               shuffle=True, num_workers=8)
 
     val_set = LaneClsDataset(list_path='val.tsv',
-                             dir_path='data_road',
+                             dir_path=DATASET_DIR,
                              img_shape=(IMG_W, IMG_H))
     val_loader = DataLoader(val_set, batch_size=1, shuffle=False, num_workers=1)
 

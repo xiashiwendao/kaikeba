@@ -200,7 +200,8 @@ def resnet50(pretrained=False, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(torch.load('./resnet50.pth'),strict=False)
+        weight_path = r'C:\nuts_sync\Code_Space\learn_kaikeba\CCV4-adv\week4\weights\resnet50-19c8e357.pth'
+        model.load_state_dict(torch.load(weight_path),strict=False)
     return model
 
 
