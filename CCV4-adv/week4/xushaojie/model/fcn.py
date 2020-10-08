@@ -6,7 +6,7 @@ from torchvision.models.vgg import VGG
 
 
 class FCN32s(nn.Module):
-
+    # 所有的FCNxs的init都是一样的
     def __init__(self, pretrained_net, n_class):
         super().__init__()
         self.n_class = n_class

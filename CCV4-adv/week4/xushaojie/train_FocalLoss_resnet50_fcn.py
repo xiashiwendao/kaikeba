@@ -26,7 +26,7 @@ from model.resnet import resnet50
 from model.resnet50_fcn import FCNs
 
 
-BATCH_SIZE = 4
+BATCH_SIZE = 40
 LR = 1e-3
 MAX_EPOCH = 50
 IMG_H = 288
