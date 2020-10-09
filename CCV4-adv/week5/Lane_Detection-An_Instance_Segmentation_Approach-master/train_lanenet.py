@@ -30,6 +30,7 @@ def init_args():
 
 def init_weights(model):
     if type(model) in [nn.Conv2d, nn.ConvTranspose2d, nn.Linear]:
+        # 初始化权重（参数），这里采用的xavier
         torch.nn.init.xavier_uniform_(model.weight)
         if model.bias is not None:
             model.bias.data.fill_(0.01)
@@ -38,11 +39,12 @@ def init_weights(model):
 if __name__ == '__main__':
 
     args = init_args()
-
+    #TODO 这里VGG_MEAN是做什么的，103,116,123都是从何而来
     VGG_MEAN = np.array([103.939, 116.779, 123.68]).astype(np.float32)
     VGG_MEAN = torch.from_numpy(VGG_MEAN).cuda().view([1, 3, 1, 1])
     batch_size = 16  # batch size per GPU
     learning_rate = 1e-3  # 1e-3
+    # TODO num_steps怎么这么大？，这个step是做什么用的，epoch吗
     num_steps = 2000000
     num_workers = 4
     ckpt_epoch_interval = 10  # save a model checkpoint every X epochs
@@ -92,6 +94,7 @@ if __name__ == '__main__':
     # net = lanenet.LaneNet_ICNet_1E2D()
     # net = lanenet.LaneNet_ICNet_1E1D()
 
+    # DataParallel主要实现了在多GPU的情况下，进行了数据的多路并行训练
     net = nn.DataParallel(net)
     net.to(device)
 
@@ -100,9 +103,14 @@ if __name__ == '__main__':
     #     if param.requires_grad == True:
     #         print("\t", name)
     # optimizer = optim.SGD(params_to_update, lr=learning_rate, momentum=0.9)
+
+    # 指定梯度下降策略（优化器）
     optimizer = optim.Adam(params_to_update)
+    # 损失函数使用的MSE
+    # TODO 这里为什么使用MSE？
     MSELoss = nn.MSELoss()
 
+    # 如果有权重文件则加载权重文件
     if args.ckpt_path is not None:
         checkpoint = torch.load(args.ckpt_path)
         net.load_state_dict(checkpoint['model_state_dict'], strict=False)  # , strict=False
@@ -114,7 +122,7 @@ if __name__ == '__main__':
 
         loss = checkpoint['loss']
         print('Checkpoint loaded.')
-
+    # 如果没有则是用xavier的初始化权重
     else:
         net.apply(init_weights)
         step = 0
@@ -123,6 +131,7 @@ if __name__ == '__main__':
         print('Network parameters initialized.')
     
     # accumulators to calculate statistics in each epoch 
+    # 初始化评价指标
     sum_bin_precision_train, sum_bin_precision_val = 0, 0
     sum_bin_recall_train, sum_bin_recall_val = 0, 0
     sum_bin_F1_train, sum_bin_F1_val = 0, 0
@@ -134,18 +143,24 @@ if __name__ == '__main__':
 
         phase = 'train'
         net.train()
+        # 每进行几轮
         if step % val_step_interval == 0:
             phase = 'val'
             net.eval()
 
         '''load dataset'''
         try:
+            # RESOLVE 这一步操作是做什么的？为什么就让data_iter在哪里不断去数据，知道把一波数据读光报异常？
+            # ANSWER 一旦batch报异常，说明一轮epoch完成了，需要进行一些操作了
             batch = next(data_iter[phase])
+        # 这个异常时next函数报的；当data_iter中迭代取数据取不出来的时候，会爆StopIteration异常
         except StopIteration:
+            # 此时需要从dataloader中再读出一批数据来
             data_iter[phase] = iter(dataloaders[phase])
             batch = next(data_iter[phase])
-
+            # TODO 真正的操作其实才开始
             if phase == 'train':
+                # 如果是train模式，那么在每个几个epcho就是将权重以及相关信息进行保存（checkpoint）
                 epoch += 1
                 if epoch % ckpt_epoch_interval == 0:
                     ckpt_dir = 'check_point/ckpt_%s_%s' % (train_start_time, args.tag)
@@ -159,7 +174,7 @@ if __name__ == '__main__':
                         'optimizer_state_dict': optimizer.state_dict(),
                         'loss': loss,
                     }, ckpt_path)
-
+                # 计算一下评价指标
                 avg_precision_bin_train = sum_bin_precision_train / num_train
                 avg_recall_bin_train = sum_bin_recall_train / num_train
                 avg_F1_bin_train = sum_bin_F1_train / num_train
@@ -170,7 +185,8 @@ if __name__ == '__main__':
                 sum_bin_precision_train = 0
                 sum_bin_recall_train = 0
                 sum_bin_F1_train = 0
-
+            
+            # 如果是validation模式，则只是计算评价指标，不需要对checkpoint进行保存
             elif phase == 'val':
                 avg_precision_bin_val = sum_bin_precision_val / num_val
                 avg_recall_bin_val = sum_bin_recall_val / num_val
@@ -183,14 +199,17 @@ if __name__ == '__main__':
                 sum_bin_F1_val = 0
 
         inputs = batch['input_tensor']
+        # TODO 下面的这两个labels比较懵逼，什么是二进制tensor，实例tensor，应该是构建数据集的时候创建的对象；后面研究一下
         labels_bin = batch['binary_tensor']
         labels_inst = batch['instance_tensor']
 
+        # 将数据放入到GPU
         inputs = inputs.to(device)
         labels_bin = labels_bin.to(device)
         labels_inst = labels_inst.to(device)
 
         # zero the parameter gradients
+        # 初始化优化函数（梯度下降函数）
         optimizer.zero_grad()
 
         # forward

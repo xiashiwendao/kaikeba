@@ -6,7 +6,7 @@ from torchvision.models.vgg import VGG
 
 
 class FCN32s(nn.Module):
-
+    # 所有的FCNxs的init都是一样的，构建32x上采样
     def __init__(self, pretrained_net, n_class):
         super().__init__()
         self.n_class = n_class
@@ -23,7 +23,7 @@ class FCN32s(nn.Module):
         self.deconv5 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, dilation=1, output_padding=1)
         self.bn5 = nn.BatchNorm2d(32)
         self.classifier = nn.Conv2d(32, n_class, kernel_size=1)
-
+    
     def forward(self, x):
         output = self.pretrained_net(x)
         x5 = output['x5']  # size=(N, 512, x.H/32, x.W/32)

@@ -58,6 +58,7 @@ class Bottleneck(nn.Module):
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
                                padding=1, bias=False)
+        # TODO 这里bn1和bn2是完全一样的，为甚么要定义两个呢
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
@@ -65,6 +66,8 @@ class Bottleneck(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
+    # 这里forward其实就是将block按照既定的顺序流水线式的处理入参X
+    # 这里forward就是pipeline
     def forward(self, x):
         residual = x
 
