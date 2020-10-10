@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
         phase = 'train'
         net.train()
-        # 每进行几轮
+        # 每进行几轮，设置阶段为val，通过代码可以看到datasetloader里面将0631作为val数据集，不需要额外制作数据集
         if step % val_step_interval == 0:
             phase = 'val'
             net.eval()
@@ -163,6 +163,7 @@ if __name__ == '__main__':
                 # 如果是train模式，那么在每个几个epcho就是将权重以及相关信息进行保存（checkpoint）
                 epoch += 1
                 if epoch % ckpt_epoch_interval == 0:
+                    # 需要保证项目根目录节点有check_point，否则mkdir失败
                     ckpt_dir = 'check_point/ckpt_%s_%s' % (train_start_time, args.tag)
                     if os.path.exists(ckpt_dir) is False:
                         os.mkdir(ckpt_dir)
@@ -216,11 +217,14 @@ if __name__ == '__main__':
         embeddings, logit = net(inputs)
 
         # compute loss
+        # TODO 这里logit是什么意思？
         preds_bin = torch.argmax(logit, dim=1, keepdim=True)
+        # TODO preds_bin_expend，labels_bin_expend都是做什么的？
         preds_bin_expand = preds_bin.view(preds_bin.shape[0] * preds_bin.shape[1] * preds_bin.shape[2] * preds_bin.shape[3])
         labels_bin_expand = labels_bin.view(labels_bin.shape[0] * labels_bin.shape[1] * labels_bin.shape[2])
 
         '''Floating Loss weighting determined by label proportion'''
+        # bincount是元素出现的频度
         bin_count = torch.bincount(labels_bin_expand)
         bin_prop = bin_count.float() / torch.sum(bin_count)
         weight_bin = torch.tensor(1) / (bin_prop + 0.2)  # max proportion: 5:1
